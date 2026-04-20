@@ -1,0 +1,63 @@
+name: Full Stack CI
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+
+  backend:
+    name: Backend Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Build Backend
+        working-directory: ./backend
+        run: |
+          chmod +x mvnw
+          ./mvnw clean install -DskipTests
+
+  frontend:
+    name: Frontend Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: ./frontend/package-lock.json
+
+      - name: Configure npm
+        working-directory: ./frontend
+        run: |
+          npm config set registry https://registry.npmjs.org/
+          npm config set fetch-retries 5
+          npm config set fetch-retry-maxtimeout 600000
+          npm config set fetch-retry-mintimeout 20000
+
+      - name: Install Frontend Dependencies (with retry)
+        working-directory: ./frontend
+        run: |
+          for i in 1 2 3; do
+            npm install --no-audit --no-fund && break || sleep 10
+          done
+
+      - name: Build Frontend
+        working-directory: ./frontend
+        run: npm run build
