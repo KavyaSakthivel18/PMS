@@ -24,6 +24,7 @@ public class PortStorageFee {
     @JoinColumn(name = "container_id", nullable = false)
     private Container container;
 
+    @Builder.Default
     @Column(name = "free_days", nullable = false)
     private int freeDays = 7;
 

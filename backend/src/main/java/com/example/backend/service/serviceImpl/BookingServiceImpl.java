@@ -7,7 +7,7 @@ import com.example.backend.entity.Container;
 import com.example.backend.entity.User;
 import com.example.backend.entity.VesselSchedule;
 import com.example.backend.enums.ContainerStatus;
-import com.example.backend.enums.Role;
+import com.example.backend.enums.UserRole;
 import com.example.backend.exception.ResourceNotFoundException;
 import com.example.backend.exception.ValidationException;
 import com.example.backend.repository.BookingRepository;
@@ -51,7 +51,7 @@ public class BookingServiceImpl implements BookingService {
         User freightForwarder = userRepository.findById(request.getFreightForwarderId())
                 .orElseThrow(() -> new ResourceNotFoundException("Freight Forwarder not found with id: " + request.getFreightForwarderId()));
 
-        if (!freightForwarder.getRole().equals(Role.FREIGHT_FORWARDER)) {
+        if (!freightForwarder.getRole().equals(UserRole.FREIGHT_FORWARDER)) {
             throw new ValidationException("User with id " + request.getFreightForwarderId() + " is not a FREIGHT_FORWARDER");
         }
 
@@ -59,7 +59,7 @@ public class BookingServiceImpl implements BookingService {
         User shippingLine = userRepository.findById(request.getShippingLineId())
                 .orElseThrow(() -> new ResourceNotFoundException("Shipping Line not found with id: " + request.getShippingLineId()));
 
-        if (!shippingLine.getRole().equals(Role.SHIPPING_LINE)) {
+        if (!shippingLine.getRole().equals(UserRole.SHIPPING_LINE)) {
             throw new ValidationException("User with id " + request.getShippingLineId() + " is not a SHIPPING_LINE");
         }
 
