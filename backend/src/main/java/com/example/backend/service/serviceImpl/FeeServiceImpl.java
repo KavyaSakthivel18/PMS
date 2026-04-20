@@ -26,8 +26,6 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@AllArgsConstructor
-@NoArgsConstructor
 public class FeeServiceImpl implements FeeService {
 
     // Business rule constants
