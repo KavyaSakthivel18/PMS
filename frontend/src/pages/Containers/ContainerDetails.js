@@ -1,10 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { containerService } from '../../services/containerService';
+import { customsService } from '../../services/customsService';
+import MovementTimeline from '../../components/MovementTimeline';
 
 const ContainerDetails = ({ containerId, onNavigate }) => {
   const [container, setContainer] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('OVERVIEW');
+  const [movements, setMovements] = useState([]);
+  const [declaration, setDeclaration] = useState(null);
   
   // Status flow mapping according to business requirements
   const AVAILABLE_STATUSES = [
@@ -23,6 +28,14 @@ const ContainerDetails = ({ containerId, onNavigate }) => {
       setLoading(true);
       const data = await containerService.getContainerById(containerId);
       setContainer(data);
+      
+      // Fetch additional customs and movement info
+      const [moveData, declData] = await Promise.all([
+        customsService.getMovementLogs(containerId),
+        customsService.getDeclarationByContainer(containerId)
+      ]);
+      setMovements(moveData);
+      setDeclaration(declData);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -71,19 +84,64 @@ const ContainerDetails = ({ containerId, onNavigate }) => {
           </div>
         </div>
 
-        <div style={styles.grid}>
-          <DetailItem label="Container Type" value={container.containerType} />
-          <DetailItem label="Size (TEU)" value={`${container.sizeTEU} TEU`} />
-          <DetailItem label="Weight" value={`${container.weightKG} KG`} />
-          <DetailItem label="Seal Number" value={container.sealNumber || 'N/A'} />
+        <div style={styles.tabContainer}>
+          <button 
+            style={activeTab === 'OVERVIEW' ? styles.activeTab : styles.tab}
+            onClick={() => setActiveTab('OVERVIEW')}
+          >
+            Overview
+          </button>
+          <button 
+            style={activeTab === 'HISTORY' ? styles.activeTab : styles.tab}
+            onClick={() => setActiveTab('HISTORY')}
+          >
+            Movement History
+          </button>
         </div>
 
-        <div style={styles.descBox}>
-          <h4 style={{ margin: '0 0 10px 0', color: '#475569' }}>Cargo Description</h4>
-          <p style={{ margin: 0, color: '#334155', lineHeight: '1.6' }}>
-            {container.cargoDescription || 'No description provided.'}
-          </p>
-        </div>
+        {activeTab === 'OVERVIEW' ? (
+          <>
+            <div style={styles.grid}>
+              <DetailItem label="Container Type" value={container.containerType} />
+              <DetailItem label="Size (TEU)" value={`${container.sizeTEU} TEU`} />
+              <DetailItem label="Weight" value={`${container.weightKG} KG`} />
+              <DetailItem label="Seal Number" value={container.sealNumber || 'N/A'} />
+            </div>
+
+            <div style={styles.sectionDivider}>
+              <h4 style={styles.sectionTitle}>Customs Information</h4>
+              {declaration ? (
+                <div style={styles.customsGrid}>
+                  <DetailItem label="HS Code" value={declaration.hsCode} />
+                  <DetailItem label="Customs Status" value={declaration.customsStatus} />
+                  <DetailItem label="Type" value={declaration.declarationType} />
+                  <DetailItem label="Inspection" value={declaration.inspectionRequired ? 'REQUIRED' : 'NOT REQUIRED'} />
+                </div>
+              ) : (
+                <div style={styles.noDataBox}>
+                  <p style={{ margin: '0 0 10px 0', fontSize: '14px' }}>No customs declaration found.</p>
+                  {container.status === 'ARRIVED' && (
+                    <button 
+                      onClick={() => onNavigate && onNavigate('FILE_DECLARATION', containerId)}
+                      style={styles.actionButton}
+                    >
+                      File Declaration
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div style={styles.descBox}>
+              <h4 style={{ margin: '0 0 10px 0', color: '#475569' }}>Cargo Description</h4>
+              <p style={{ margin: 0, color: '#334155', lineHeight: '1.6' }}>
+                {container.cargoDescription || 'No description provided.'}
+              </p>
+            </div>
+          </>
+        ) : (
+          <MovementTimeline movements={movements} />
+        )}
       </div>
     </div>
   );
@@ -186,6 +244,72 @@ const styles = {
     padding: '24px',
     borderRadius: '8px',
     border: '1px solid #e2e8f0'
+  },
+  tabContainer: {
+    display: 'flex',
+    gap: '20px',
+    borderBottom: '1px solid #e2e8f0',
+    marginBottom: '30px'
+  },
+  tab: {
+    padding: '12px 20px',
+    background: 'none',
+    border: 'none',
+    borderBottom: '2px solid transparent',
+    color: '#64748b',
+    cursor: 'pointer',
+    fontSize: '15px',
+    fontWeight: '500',
+    transition: 'all 0.2s'
+  },
+  activeTab: {
+    padding: '12px 20px',
+    background: 'none',
+    border: 'none',
+    borderBottom: '2px solid #3b82f6',
+    color: '#3b82f6',
+    cursor: 'pointer',
+    fontSize: '15px',
+    fontWeight: '600'
+  },
+  sectionDivider: {
+    marginTop: '40px',
+    paddingTop: '30px',
+    borderTop: '1px solid #f1f5f9',
+    marginBottom: '40px'
+  },
+  sectionTitle: {
+    margin: '0 0 15px 0',
+    color: '#475569',
+    fontSize: '16px',
+    fontWeight: '600'
+  },
+  customsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, 1fr)',
+    gap: '20px',
+    backgroundColor: '#f0f9ff',
+    padding: '20px',
+    borderRadius: '8px',
+    border: '1px solid #e0f2fe'
+  },
+  noDataBox: {
+    padding: '20px',
+    backgroundColor: '#fff7ed',
+    borderRadius: '8px',
+    border: '1px solid #ffedd5',
+    color: '#9a3412',
+    textAlign: 'center'
+  },
+  actionButton: {
+    padding: '8px 16px',
+    backgroundColor: '#ea580c',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontWeight: '600',
+    fontSize: '14px'
   }
 };
 
