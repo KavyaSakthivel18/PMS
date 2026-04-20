@@ -38,10 +38,13 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc</artifactId>
         </dependency>
+<<<<<<< HEAD
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
+=======
+>>>>>>> 627d4d55e792b9689077b96d7cadf3f2e063fc1b
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
