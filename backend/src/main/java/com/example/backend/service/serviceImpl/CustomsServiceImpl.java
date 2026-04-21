@@ -33,7 +33,10 @@ public class CustomsServiceImpl implements CustomsService {
     private final CustomsDeclarationRepository customsDeclarationRepository;
     private final ContainerRepository containerRepository;
     private final UserRepository userRepository;
-    private final MovementLogService movementLogService;
+    
+    @org.springframework.beans.factory.annotation.Autowired
+    @org.springframework.context.annotation.Lazy
+    private MovementLogService movementLogService;
     
     @Override
     @Transactional

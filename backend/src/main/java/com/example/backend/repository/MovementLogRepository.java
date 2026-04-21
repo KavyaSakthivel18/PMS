@@ -81,18 +81,10 @@ public interface MovementLogRepository extends JpaRepository<MovementLog, Long> 
     List<MovementLog> findByLocation(@Param("location") String location);
     
     @Query("""
-        SELECT EXTRACT(DAY FROM (
-            (SELECT ml.timestamp FROM MovementLog ml 
-             WHERE ml.container.id = :containerId 
-             AND ml.movementType IN ('DELIVERY', 'GATE_OUT')
-             ORDER BY ml.timestamp DESC LIMIT 1) 
-            - 
-            (SELECT ml.timestamp FROM MovementLog ml 
-             WHERE ml.container.id = :containerId 
-             AND ml.movementType = 'VESSEL_DISCHARGE'
-             LIMIT 1)
-        )) 
-        FROM dual
+        SELECT CAST(MAX((CAST(EXTRACT(EPOCH FROM mlEnd.timestamp) AS double) - CAST(EXTRACT(EPOCH FROM mlStart.timestamp) AS double)) / 86400.0) AS integer)
+        FROM MovementLog mlStart, MovementLog mlEnd
+        WHERE mlStart.container.id = :containerId AND mlStart.movementType = 'VESSEL_DISCHARGE'
+        AND mlEnd.container.id = :containerId AND mlEnd.movementType IN ('DELIVERY', 'GATE_OUT')
         """)
     Integer calculateDwellTime(@Param("containerId") Long containerId);
     
@@ -101,7 +93,7 @@ public interface MovementLogRepository extends JpaRepository<MovementLog, Long> 
         WHERE ml.container.id IN (
             SELECT ml2.container.id FROM MovementLog ml2 
             GROUP BY ml2.container.id 
-            HAVING EXTRACT(DAY FROM (MAX(ml2.timestamp) - MIN(ml2.timestamp))) >= :minDays
+            HAVING (CAST(EXTRACT(EPOCH FROM MAX(ml2.timestamp)) AS double) - CAST(EXTRACT(EPOCH FROM MIN(ml2.timestamp)) AS double)) / 86400.0 >= :minDays
         )
         """)
     List<MovementLog> findContainersWithExtendedDwellTime(@Param("minDays") Integer minDays);
@@ -120,16 +112,10 @@ public interface MovementLogRepository extends JpaRepository<MovementLog, Long> 
     boolean hasGateOutMovement(@Param("containerId") Long containerId);
     
     @Query("""
-        SELECT EXTRACT(HOUR FROM (
-            (SELECT ml.timestamp FROM MovementLog ml 
-             WHERE ml.container.id = :containerId 
-             AND ml.movementType = 'GATE_OUT' LIMIT 1)
-            - 
-            (SELECT ml.timestamp FROM MovementLog ml 
-             WHERE ml.container.id = :containerId 
-             AND ml.movementType = 'VESSEL_DISCHARGE' LIMIT 1)
-        )) 
-        FROM dual
+        SELECT CAST(MAX((CAST(EXTRACT(EPOCH FROM mlEnd.timestamp) AS double) - CAST(EXTRACT(EPOCH FROM mlStart.timestamp) AS double)) / 3600.0) AS long)
+        FROM MovementLog mlStart, MovementLog mlEnd
+        WHERE mlStart.container.id = :containerId AND mlStart.movementType = 'VESSEL_DISCHARGE'
+        AND mlEnd.container.id = :containerId AND mlEnd.movementType = 'GATE_OUT'
         """)
     Long calculateStorageDuration(@Param("containerId") Long containerId);
 }

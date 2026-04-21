@@ -82,7 +82,7 @@ public interface CustomsDeclarationRepository extends JpaRepository<CustomsDecla
     List<CustomsDeclaration> findHighValueImports(@Param("minValue") Double minValue);
     
     @Query("""
-        SELECT AVG(EXTRACT(MINUTE FROM (cd.clearedAt - cd.createdAt))) 
+        SELECT AVG((CAST(EXTRACT(EPOCH FROM cd.clearedAt) AS double) - CAST(EXTRACT(EPOCH FROM cd.createdAt) AS double)) / 60.0) 
         FROM CustomsDeclaration cd 
         WHERE cd.filedBy.id = :officerId 
         AND cd.customsStatus = 'CLEARED'
