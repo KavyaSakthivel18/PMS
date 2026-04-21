@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:8080/api/containers';
+const BASE_URL = 'http://localhost:8082/api/containers';
 
 export const containerService = {
   getAllContainers: async () => {

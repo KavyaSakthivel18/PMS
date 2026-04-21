@@ -1,5 +1,5 @@
-const BASE_URL = 'http://localhost:8080/api/customs';
-const MOVEMENT_URL = 'http://localhost:8080/api/movement-logs';
+const BASE_URL = 'http://localhost:8082/api/customs';
+const MOVEMENT_URL = 'http://localhost:8082/api/movement-logs';
 
 export const customsService = {
   fileDeclaration: async (payload) => {

@@ -1,11 +1,10 @@
 import React from "react";
 
-const Loader = () => {
-  return (
-    <div style={{ textAlign: "center", padding: "20px" }}>
-      <h3>Loading...</h3>
-    </div>
-  );
-};
+const Loader = ({ message = "Loading…" }) => (
+  <div className="loader-wrap" style={{ flexDirection: "column", gap: 16 }}>
+    <div className="spinner" />
+    <span style={{ fontSize: 14, color: "var(--text-muted)" }}>{message}</span>
+  </div>
+);
 
 export default Loader;

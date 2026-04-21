@@ -24,23 +24,27 @@ public interface MovementLogRepository extends JpaRepository<MovementLog, Long> 
     @Query("""
         SELECT ml FROM MovementLog ml 
         WHERE ml.container.id = :containerId 
-        ORDER BY ml.timestamp DESC 
-        LIMIT 1
+        ORDER BY ml.timestamp DESC
         """)
-    Optional<MovementLog> findMostRecentByContainerId(@Param("containerId") Long containerId);
+    List<MovementLog> findMostRecentByContainerIdPageable(@Param("containerId") Long containerId, org.springframework.data.domain.Pageable pageable);
+
+    default Optional<MovementLog> findMostRecentByContainerId(Long containerId) {
+        List<MovementLog> results = findMostRecentByContainerIdPageable(containerId, org.springframework.data.domain.PageRequest.of(0, 1));
+        return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
+    }
     
     List<MovementLog> findByMovementType(@Param("movementType") MovementType movementType);
     
     @Query("""
         SELECT ml FROM MovementLog ml 
-        WHERE ml.movementType = 'GATE_OUT'
+        WHERE ml.movementType = com.example.backend.enums.MovementType.GATE_OUT
         ORDER BY ml.timestamp DESC
         """)
     List<MovementLog> findAllGateOutMovements();
     
     @Query("""
         SELECT ml FROM MovementLog ml 
-        WHERE ml.movementType = 'DELIVERY'
+        WHERE ml.movementType = com.example.backend.enums.MovementType.DELIVERY
         ORDER BY ml.timestamp DESC
         """)
     List<MovementLog> findAllDeliveries();
@@ -81,18 +85,10 @@ public interface MovementLogRepository extends JpaRepository<MovementLog, Long> 
     List<MovementLog> findByLocation(@Param("location") String location);
     
     @Query("""
-        SELECT EXTRACT(DAY FROM (
-            (SELECT ml.timestamp FROM MovementLog ml 
-             WHERE ml.container.id = :containerId 
-             AND ml.movementType IN ('DELIVERY', 'GATE_OUT')
-             ORDER BY ml.timestamp DESC LIMIT 1) 
-            - 
-            (SELECT ml.timestamp FROM MovementLog ml 
-             WHERE ml.container.id = :containerId 
-             AND ml.movementType = 'VESSEL_DISCHARGE'
-             LIMIT 1)
-        )) 
-        FROM dual
+        SELECT CAST(MAX(TIMESTAMPDIFF(SECOND, mlStart.timestamp, mlEnd.timestamp) / 86400.0) AS integer)
+        FROM MovementLog mlStart, MovementLog mlEnd
+        WHERE mlStart.container.id = :containerId AND mlStart.movementType = com.example.backend.enums.MovementType.VESSEL_DISCHARGE
+        AND mlEnd.container.id = :containerId AND mlEnd.movementType IN (com.example.backend.enums.MovementType.DELIVERY, com.example.backend.enums.MovementType.GATE_OUT)
         """)
     Integer calculateDwellTime(@Param("containerId") Long containerId);
     
@@ -101,7 +97,7 @@ public interface MovementLogRepository extends JpaRepository<MovementLog, Long> 
         WHERE ml.container.id IN (
             SELECT ml2.container.id FROM MovementLog ml2 
             GROUP BY ml2.container.id 
-            HAVING EXTRACT(DAY FROM (MAX(ml2.timestamp) - MIN(ml2.timestamp))) >= :minDays
+            HAVING (TIMESTAMPDIFF(SECOND, MIN(ml2.timestamp), MAX(ml2.timestamp)) / 86400.0) >= :minDays
         )
         """)
     List<MovementLog> findContainersWithExtendedDwellTime(@Param("minDays") Integer minDays);
@@ -115,21 +111,15 @@ public interface MovementLogRepository extends JpaRepository<MovementLog, Long> 
     @Query("""
         SELECT COUNT(ml) > 0 FROM MovementLog ml 
         WHERE ml.container.id = :containerId 
-        AND ml.movementType = 'GATE_OUT'
+        AND ml.movementType = com.example.backend.enums.MovementType.GATE_OUT
         """)
     boolean hasGateOutMovement(@Param("containerId") Long containerId);
     
     @Query("""
-        SELECT EXTRACT(HOUR FROM (
-            (SELECT ml.timestamp FROM MovementLog ml 
-             WHERE ml.container.id = :containerId 
-             AND ml.movementType = 'GATE_OUT' LIMIT 1)
-            - 
-            (SELECT ml.timestamp FROM MovementLog ml 
-             WHERE ml.container.id = :containerId 
-             AND ml.movementType = 'VESSEL_DISCHARGE' LIMIT 1)
-        )) 
-        FROM dual
+        SELECT CAST(MAX(TIMESTAMPDIFF(SECOND, mlStart.timestamp, mlEnd.timestamp) / 3600.0) AS long)
+        FROM MovementLog mlStart, MovementLog mlEnd
+        WHERE mlStart.container.id = :containerId AND mlStart.movementType = com.example.backend.enums.MovementType.VESSEL_DISCHARGE
+        AND mlEnd.container.id = :containerId AND mlEnd.movementType = com.example.backend.enums.MovementType.GATE_OUT
         """)
     Long calculateStorageDuration(@Param("containerId") Long containerId);
 }

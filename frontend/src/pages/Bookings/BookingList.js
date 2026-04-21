@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { bookingService } from '../../services/bookingService';
 
 const BookingList = ({ onNavigate }) => {
@@ -7,11 +7,7 @@ const BookingList = ({ onNavigate }) => {
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('ALL');
 
-  useEffect(() => {
-    fetchBookings();
-  }, [filter]);
-
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
     try {
       setLoading(true);
       let data;
@@ -20,22 +16,17 @@ const BookingList = ({ onNavigate }) => {
       } else {
         data = await bookingService.getBookingsByStatus(filter);
       }
-      setBookings(data);
+      setBookings(data || []);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter]);
 
-  const handleStatusUpdate = async (bookingId, newStatus) => {
-    try {
-      await bookingService.updateBookingStatus(bookingId, newStatus);
-      fetchBookings();
-    } catch (err) {
-      alert(`Error updating status: ${err.message}`);
-    }
-  };
+  useEffect(() => {
+    fetchBookings();
+  }, [fetchBookings]);
 
   if (loading) return <div style={styles.center}>Loading bookings...</div>;
   if (error) return <div style={{ ...styles.center, color: 'red' }}>Error: {error}</div>;

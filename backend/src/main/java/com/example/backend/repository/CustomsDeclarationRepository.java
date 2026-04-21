@@ -18,10 +18,14 @@ public interface CustomsDeclarationRepository extends JpaRepository<CustomsDecla
     @Query(value = """
         SELECT cd FROM CustomsDeclaration cd 
         WHERE cd.container.id = :containerId 
-        ORDER BY cd.createdAt DESC 
-        LIMIT 1
+        ORDER BY cd.createdAt DESC
         """)
-    Optional<CustomsDeclaration> findLatestByContainerId(@Param("containerId") Long containerId);
+    List<CustomsDeclaration> findLatestByContainerIdPageable(@Param("containerId") Long containerId, org.springframework.data.domain.Pageable pageable);
+
+    default Optional<CustomsDeclaration> findLatestByContainerId(Long containerId) {
+        List<CustomsDeclaration> results = findLatestByContainerIdPageable(containerId, org.springframework.data.domain.PageRequest.of(0, 1));
+        return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
+    }
     
     List<CustomsDeclaration> findByContainerId(@Param("containerId") Long containerId);
     
@@ -31,13 +35,13 @@ public interface CustomsDeclarationRepository extends JpaRepository<CustomsDecla
     
     @Query("""
         SELECT cd FROM CustomsDeclaration cd 
-        WHERE cd.customsStatus = 'HELD'
+        WHERE cd.customsStatus = com.example.backend.enums.CustomsStatus.HELD
         """)
     List<CustomsDeclaration> findAllHeldDeclarations();
     
     @Query("""
         SELECT cd FROM CustomsDeclaration cd 
-        WHERE cd.customsStatus IN ('PENDING', 'UNDER_REVIEW')
+        WHERE cd.customsStatus IN (com.example.backend.enums.CustomsStatus.PENDING, com.example.backend.enums.CustomsStatus.UNDER_REVIEW)
         ORDER BY cd.createdAt ASC
         """)
     List<CustomsDeclaration> findPendingReviewDeclarations();
@@ -45,7 +49,7 @@ public interface CustomsDeclarationRepository extends JpaRepository<CustomsDecla
     @Query("""
         SELECT cd FROM CustomsDeclaration cd 
         WHERE cd.inspectionRequired = true 
-        AND cd.customsStatus != 'CLEARED'
+        AND cd.customsStatus != com.example.backend.enums.CustomsStatus.CLEARED
         """)
     List<CustomsDeclaration> findDeclarationsRequiringInspection();
     
@@ -69,23 +73,23 @@ public interface CustomsDeclarationRepository extends JpaRepository<CustomsDecla
     @Query("""
         SELECT COUNT(cd) > 0 FROM CustomsDeclaration cd 
         WHERE cd.container.id = :containerId 
-        AND cd.customsStatus NOT IN ('CLEARED', 'REJECTED')
+        AND cd.customsStatus NOT IN (com.example.backend.enums.CustomsStatus.CLEARED, com.example.backend.enums.CustomsStatus.REJECTED)
         """)
     boolean hasActiveDeclaration(@Param("containerId") Long containerId);
     
     @Query("""
         SELECT cd FROM CustomsDeclaration cd 
-        WHERE cd.declarationType = 'IMPORT' 
+        WHERE cd.declarationType = com.example.backend.enums.DeclarationType.IMPORT 
         AND cd.declaredValue >= :minValue
         ORDER BY cd.declaredValue DESC
         """)
     List<CustomsDeclaration> findHighValueImports(@Param("minValue") Double minValue);
     
     @Query("""
-        SELECT AVG(EXTRACT(MINUTE FROM (cd.clearedAt - cd.createdAt))) 
+        SELECT AVG(TIMESTAMPDIFF(SECOND, cd.createdAt, cd.clearedAt)) / 60.0 
         FROM CustomsDeclaration cd 
         WHERE cd.filedBy.id = :officerId 
-        AND cd.customsStatus = 'CLEARED'
+        AND cd.customsStatus = com.example.backend.enums.CustomsStatus.CLEARED
         """)
     Double getAverageClearanceTimeByOfficer(@Param("officerId") Long officerId);
 }

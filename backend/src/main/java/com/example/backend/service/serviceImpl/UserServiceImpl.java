@@ -27,6 +27,7 @@ public class UserServiceImpl implements UserService {
                 .email(request.getEmail())
                 .role(request.getRole())
                 .companyName(request.getCompanyName())
+                .password(request.getPassword())
                 .createdAt(LocalDateTime.now())
                 .build();
 
@@ -49,6 +50,26 @@ public class UserServiceImpl implements UserService {
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public UserResponse register(UserRequest request) {
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new RuntimeException("User already exists with email: " + request.getEmail());
+        }
+        return createUser(request);
+    }
+
+    @Override
+    public UserResponse login(String email, String password) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Invalid email or password"));
+        
+        if (!user.getPassword().equals(password)) {
+            throw new RuntimeException("Invalid email or password");
+        }
+        
+        return mapToResponse(user);
     }
 
     private UserResponse mapToResponse(User user) {
