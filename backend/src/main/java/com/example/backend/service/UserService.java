@@ -14,4 +14,8 @@ public interface UserService {
 
     List<UserResponse> getUsersByRole(UserRole role);
 
+    UserResponse register(UserRequest request);
+
+    UserResponse login(String email, String password);
+
 }

@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:8080/api/bookings';
+const BASE_URL = 'http://localhost:8082/api/bookings';
 
 export const bookingService = {
   getAllBookings: async () => {

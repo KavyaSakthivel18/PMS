@@ -17,7 +17,7 @@ const Register = () => {
     setError("");
     setLoading(true);
     try {
-      await axios.post("http://localhost:8080/api/auth/register", form);
+      await axios.post("http://localhost:8082/api/auth/register", form);
       setSuccess(true);
       setTimeout(() => navigate("/login"), 1800);
     } catch (err) {

@@ -59,7 +59,7 @@ const Dashboard = () => {
 
   const fetchDashboard = async () => {
     try {
-      const res = await axios.get("http://localhost:8080/api/dashboard");
+      const res = await axios.get("http://localhost:8082/api/dashboard");
       setData(res.data);
     } catch {
       setError(true);

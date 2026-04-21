@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:8080/api/fees';
+const BASE_URL = 'http://localhost:8082/api/fees';
 const FREE_DAYS = 7;
 const FEE_PER_DAY = 50; // Default value, should come from backend
 const DEMURRAGE_RATE = 150; // Default value, should come from backend
