@@ -1,25 +1,24 @@
-# Step 1: Build stage
-FROM maven:3.9.9-eclipse-temurin-17 AS build
-
+# Build stage
+FROM maven:3.9.6-eclipse-temurin-17 AS build
 WORKDIR /app
-
-# Copy backend project
-COPY backend/pom.xml .
-RUN mvn dependency:go-offline
-
-COPY backend/src ./src
-
-# Build jar
+COPY . .
 RUN mvn clean package -DskipTests
 
-# Step 2: Run stage
+# Run stage
 FROM eclipse-temurin:17-jdk-alpine
+
+# Create non-root user
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 WORKDIR /app
 
-# Copy jar from build stage
+# Copy jar
 COPY --from=build /app/target/*.jar app.jar
 
-EXPOSE 8080
+# Change ownership
+RUN chown -R appuser:appgroup /app
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Switch user
+USER appuser
+
+CMD ["java", "-jar", "app.jar"]
