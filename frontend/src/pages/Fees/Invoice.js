@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { feeService } from '../../services/feeService';
 import { bookingService } from '../../services/bookingService';
 
@@ -8,11 +8,7 @@ const Invoice = ({ bookingId, onNavigate }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetchData();
-  }, [bookingId]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const [bookingData, invoiceData] = await Promise.all([
@@ -26,7 +22,11 @@ const Invoice = ({ bookingId, onNavigate }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [bookingId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [bookingId, fetchData]);
 
   const handlePrint = () => {
     window.print();

@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { customsService } from '../../services/customsService';
 
 const DeclarationList = ({ onNavigate }) => {
-  const [declarations, setDeclarations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   // Note: Backend might need an endpoint to list ALL declarations. 
   // For now, these are placeholder logic for the dashboard view.
@@ -13,16 +10,6 @@ const DeclarationList = ({ onNavigate }) => {
     // in a real app, we'd have a find-all or filtered search.
     setLoading(false);
   }, []);
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'CLEARED': return '#22c55e';
-      case 'HELD': return '#ef4444';
-      case 'UNDER_REVIEW': return '#f59e0b';
-      case 'REJECTED': return '#7f1d1d';
-      default: return '#64748b';
-    }
-  };
 
   if (loading) return <div style={styles.center}>Loading declarations...</div>;
 

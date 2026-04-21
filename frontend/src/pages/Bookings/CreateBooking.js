@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { bookingService } from '../../services/bookingService';
 import { feeService } from '../../services/feeService';
 import { containerService } from '../../services/containerService';
@@ -24,18 +24,7 @@ const CreateBooking = ({ onNavigate }) => {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  // Recalculate fees whenever relevant fields change
-  useEffect(() => {
-    if (formData.containerId && formData.bookingDate) {
-      calculateEstimatedFees();
-    }
-  }, [formData.bookingDate, formData.expectedDeliveryDate, formData.containerId]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const [containersData, usersData, vesselsData] = await Promise.all([
@@ -51,13 +40,16 @@ const CreateBooking = ({ onNavigate }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const calculateEstimatedFees = () => {
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const calculateEstimatedFees = useCallback(() => {
     const selectedContainer = containers.find(c => c.id === parseInt(formData.containerId));
     if (!selectedContainer) return;
 
-    // Get the arrival date (booking date) and expected delivery date
     const calculatedFees = feeService.calculateFees({
       arrivalDate: formData.bookingDate,
       pickupDate: formData.expectedDeliveryDate || null,
@@ -67,7 +59,14 @@ const CreateBooking = ({ onNavigate }) => {
     });
 
     setEstimatedFees(calculatedFees);
-  };
+  }, [containers, formData.containerId, formData.bookingDate, formData.expectedDeliveryDate]);
+
+  // Recalculate fees whenever relevant fields change
+  useEffect(() => {
+    if (formData.containerId && formData.bookingDate) {
+      calculateEstimatedFees();
+    }
+  }, [formData.containerId, formData.bookingDate, calculateEstimatedFees]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

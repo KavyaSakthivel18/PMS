@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { customsService } from '../../services/customsService';
 import { containerService } from '../../services/containerService';
 
@@ -15,13 +15,7 @@ const FileDeclaration = ({ containerId, onNavigate }) => {
   });
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (containerId) {
-      fetchContainer();
-    }
-  }, [containerId]);
-
-  const fetchContainer = async () => {
+  const fetchContainer = useCallback(async () => {
     try {
       const data = await containerService.getContainerById(containerId);
       setContainer(data);
@@ -33,7 +27,13 @@ const FileDeclaration = ({ containerId, onNavigate }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [containerId]);
+
+  useEffect(() => {
+    if (containerId) {
+      fetchContainer();
+    }
+  }, [containerId, fetchContainer]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;

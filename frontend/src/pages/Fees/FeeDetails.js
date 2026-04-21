@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { feeService } from '../../services/feeService';
 import { bookingService } from '../../services/bookingService';
 
@@ -15,11 +15,7 @@ const FeeDetails = ({ bookingId, onNavigate }) => {
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [processing, setProcessing] = useState(false);
 
-  useEffect(() => {
-    fetchData();
-  }, [bookingId]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const [bookingData, feesData] = await Promise.all([
@@ -33,7 +29,11 @@ const FeeDetails = ({ bookingId, onNavigate }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [bookingId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [bookingId, fetchData]);
 
   const handlePayment = async (e) => {
     e.preventDefault();

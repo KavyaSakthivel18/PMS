@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { containerService } from '../../services/containerService';
 import { customsService } from '../../services/customsService';
 import MovementTimeline from '../../components/MovementTimeline';
@@ -17,19 +17,12 @@ const ContainerDetails = ({ containerId, onNavigate }) => {
     'GATE_OUT', 'IN_TRANSIT', 'DELIVERED', 'EXPORT_READY', 'LOADED', 'DEPARTED'
   ];
 
-  useEffect(() => {
-    if (containerId) {
-      fetchContainerDetails();
-    }
-  }, [containerId]);
-
-  const fetchContainerDetails = async () => {
+  const fetchContainerDetails = useCallback(async () => {
     try {
       setLoading(true);
       const data = await containerService.getContainerById(containerId);
       setContainer(data);
       
-      // Fetch additional customs and movement info
       const [moveData, declData] = await Promise.all([
         customsService.getMovementLogs(containerId),
         customsService.getDeclarationByContainer(containerId)
@@ -41,7 +34,13 @@ const ContainerDetails = ({ containerId, onNavigate }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [containerId]);
+
+  useEffect(() => {
+    if (containerId) {
+      fetchContainerDetails();
+    }
+  }, [containerId, fetchContainerDetails]);
 
   const handleStatusUpdate = async (e) => {
     const newStatus = e.target.value;
