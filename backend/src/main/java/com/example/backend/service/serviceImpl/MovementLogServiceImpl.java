@@ -62,7 +62,7 @@ public class MovementLogServiceImpl implements MovementLogService {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
         
-        MovementLog log = MovementLog.builder()
+        MovementLog movementLog = MovementLog.builder()
             .container(container)
             .movementType(request.getMovementType())
             .fromLocation(request.getFromLocation())
@@ -75,7 +75,7 @@ public class MovementLogServiceImpl implements MovementLogService {
             .isAutomatic(false)
             .build();
         
-        MovementLog saved = movementLogRepository.save(log);
+        MovementLog saved = movementLogRepository.save(movementLog);
         
         updateContainerStatusFromMovement(container, request.getMovementType());
         
@@ -97,7 +97,7 @@ public class MovementLogServiceImpl implements MovementLogService {
         
         MovementType type = inferMovementType(fromLocation, toLocation);
         
-        MovementLog log = MovementLog.builder()
+        MovementLog movementLog = MovementLog.builder()
             .container(container)
             .movementType(type)
             .fromLocation(fromLocation)
@@ -109,7 +109,7 @@ public class MovementLogServiceImpl implements MovementLogService {
             .isAutomatic(true) 
             .build();
         
-        movementLogRepository.save(log);
+        movementLogRepository.save(movementLog);
         log.debug("Auto movement log created for: {}", container.getContainerNumber());
     }
     
